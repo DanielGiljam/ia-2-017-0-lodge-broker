@@ -1,0 +1,11 @@
+{
+  "name": "ia-2-017-0-lodge-broker",
+  "version": "0.0.0",
+  "description": "A traditional REST API which basically does what AirBnb does.",
+  "homepage": "https://github.com/DanielGiljam/ia-2-017-0-lodge-broker#readme",
+  "bugs": "https://github.com/DanielGiljam/ia-2-017-0-lodge-broker/issues",
+  "license": "MIT",
+  "private": true,
+  "author": "Daniel Giljam (https://github.com/DanielGiljam)",
+  "repository": "github:DanielGiljam/ia-2-017-0-lodge-broker"
+}
