@@ -24,4 +24,4 @@ services:
     environment:
       WAIT_HOSTS: mongo:27017
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT:-3000}:${PORT:-3000}"
