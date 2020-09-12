@@ -9,11 +9,32 @@
   "author": "Daniel Giljam (https://github.com/DanielGiljam)",
   "repository": "github:DanielGiljam/ia-2-017-0-lodge-broker",
   "scripts": {
-    "start": "tsnd src/index.ts"
+    "start": "tsnd src/index.ts",
+    "tsc": "tsc",
+    "lint": "eslint .",
+    "fix": "eslint --fix .",
+    "prettier": "prettier --check .",
+    "format": "prettier --write .",
+    "tlp": "npm run tsc && npm run lint && npm run prettier",
+    "tff": "npm run tsc && npm run fix && npm run format"
   },
   "devDependencies": {
+    "@danielgiljam/eslint-config": "^2.0.1",
+    "@danielgiljam/prettierrc": "^2.0.1",
+    "@typescript-eslint/eslint-plugin": "^3.10.1",
+    "@typescript-eslint/parser": "^3.10.1",
+    "eslint": "^7.8.1",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-config-standard-jsx": "^8.1.0",
+    "eslint-config-standard-with-typescript": "^18.0.2",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-react": "^7.20.6",
+    "eslint-plugin-standard": "^4.0.1",
     "express": "^4.17.1",
     "mongoose": "^5.10.5",
+    "prettier": "^2.1.1",
     "ts-node-dev": "^1.0.0-pre.62",
     "typescript": "^4.0.2"
   }
