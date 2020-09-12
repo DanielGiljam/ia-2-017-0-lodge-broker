@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
     "lib": ["ES2020"],
-    "module": "ES2020",
+    "module": "commonjs",
     "moduleResolution": "node",
     "noEmit": true,
     "skipLibCheck": true,
