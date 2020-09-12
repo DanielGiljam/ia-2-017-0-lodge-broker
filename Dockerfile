@@ -6,6 +6,9 @@ WORKDIR /srv/ia-2-017-0-lodge-broker
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
 RUN chmod +x /wait
 
+ADD tsconfig.json /srv/ia-2-017-0-lodge-broker/
+ADD env.d.ts /srv/ia-2-017-0-lodge-broker/
+
 ADD package.json /srv/ia-2-017-0-lodge-broker/
 RUN npm install
 

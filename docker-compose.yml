@@ -5,9 +5,9 @@ services:
     image: mongo:4.4.0
     container_name: mongo
     env_file:
-      - .env
+      - ./.env
     volumes:
-      - db:/data/db
+      - ./db:/data/db
     restart: always
     ports:
       - "27017:27017"
@@ -16,10 +16,10 @@ services:
     container_name: node
     build: ./
     env_file:
-      - .env
+      - ./.env
     volumes:
-      - db:/data/db
-      - src:/srv/ia-2-017-0-lodge-broker/src
+      - ./db:/data/db
+      - ./src:/srv/ia-2-017-0-lodge-broker/src
     restart: always
     environment:
       WAIT_HOSTS: mongo:27017
