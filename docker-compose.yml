@@ -24,4 +24,4 @@ services:
     environment:
       WAIT_HOSTS: mongo:27017
     ports:
-      - "${API_PORT}:${API_PORT}"
+      - "${PORT}:${PORT}"
