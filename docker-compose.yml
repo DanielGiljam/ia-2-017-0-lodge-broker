@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:4.4.0
+    container_name: mongo
+    env_file:
+      - .env
+    volumes:
+      - db:/data/db
+    restart: always
+    ports:
+      - "27017:27017"
+
+  node:
+    container_name: node
+    build: ./
+    env_file:
+      - .env
+    volumes:
+      - db:/data/db
+      - src:/srv/ia-2-017-0-lodge-broker/src
+    restart: always
+    environment:
+      WAIT_HOSTS: mongo:27017
+    ports:
+      - "${API_PORT}:${API_PORT}"
