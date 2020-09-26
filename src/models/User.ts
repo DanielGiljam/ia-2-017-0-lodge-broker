@@ -1,4 +1,4 @@
-import {genSaltSync, hashSync} from "bcrypt"
+import {compareSync, genSaltSync, hashSync} from "bcrypt"
 import {Document, Schema, model} from "mongoose"
 
 const UserSchema = new Schema({
@@ -22,9 +22,11 @@ interface IUserSchema extends Document {
   password: string
 }
 
-UserSchema.method("checkPassword", function checkPassword(password: string) {
-  // Check password...
-  return true
+UserSchema.method("checkPassword", function checkPassword(
+  this: IUserSchema,
+  password: string,
+) {
+  return compareSync(password, this.password)
 })
 
 interface IUserBase extends IUserSchema {
