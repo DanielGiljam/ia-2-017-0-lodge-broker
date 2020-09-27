@@ -1,6 +1,7 @@
 import {randomBytes} from "crypto"
 
-import {RequestHandler} from "express"
+import {ErrorRequestHandler, RequestHandler} from "express"
+import expressJWT from "express-jwt"
 import {JSONSchema7} from "json-schema"
 import jwt from "jsonwebtoken"
 
@@ -31,6 +32,23 @@ export const createRefreshToken = (email: string): string => {
 export const invalidateRefreshToken = (refreshToken: string): void => {
   refreshTokens.delete(refreshToken)
 }
+
+export const createTokenVerifyingMiddleware = (): [
+  RequestHandler,
+  ErrorRequestHandler,
+] => [
+  expressJWT({
+    secret: accessTokenSecret,
+    algorithms: ["HS256"],
+  }).unless({
+    path: ["/user/login", "/user/token", "/user/signup", "/user/logout"],
+  }),
+  (error, _req, res, _next) => {
+    if (error.name === "UnauthorizedError") {
+      res.sendStatus(401)
+    }
+  },
+]
 
 const token: RequestHandler[] = [
   createRequestBodyValidatorMiddleware(tokenRequestBodySchema),

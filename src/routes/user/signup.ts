@@ -21,7 +21,7 @@ const signup: RequestHandler[] = [
   createRequestBodyValidatorMiddleware(loginRequestBodySchema),
   async (req, res) => {
     const {email, firstName, lastName, password} = req.body
-    if ((await User.findById(email)) != null) {
+    if ((await User.findOne({email}).exec()) != null) {
       res.sendStatus(409)
     } else {
       try {
@@ -33,7 +33,7 @@ const signup: RequestHandler[] = [
         }).save()
         const accessToken = createAccessToken(user.email)
         const refreshToken = createRefreshToken(user.email)
-        res.status(200).json({accessToken, refreshToken})
+        res.status(200).json({status: "OK", accessToken, refreshToken})
       } catch (error) {
         console.error(error)
         res.sendStatus(500)
