@@ -21,7 +21,7 @@ const login: RequestHandler[] = [
     const user = await User.findOne({email: req.body.email}, "+password").exec()
     if (user?.checkPassword(req.body.password) === true) {
       const accessToken = createAccessToken(user.email)
-      const refreshToken = createRefreshToken(user.email)
+      const refreshToken = await createRefreshToken(user.email)
       res.status(200).json({status: "OK", accessToken, refreshToken})
     } else {
       res.sendStatus(401)

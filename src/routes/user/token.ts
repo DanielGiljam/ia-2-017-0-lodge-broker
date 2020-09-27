@@ -5,6 +5,7 @@ import expressJWT from "express-jwt"
 import {JSONSchema7} from "json-schema"
 import jwt from "jsonwebtoken"
 
+import RefreshToken from "../../models/RefreshToken"
 import createRequestBodyValidatorMiddleware from "../../util/createRequestBodyValidatorMiddleware"
 
 const tokenRequestBodySchema: JSONSchema7 = {
@@ -15,22 +16,25 @@ const tokenRequestBodySchema: JSONSchema7 = {
   required: ["refreshToken"],
 }
 
-const accessTokenSecret = randomBytes(64).toString("hex")
-const refreshTokenSecret = randomBytes(64).toString("hex")
-
-const refreshTokens: Set<string> = new Set()
+const accessTokenSecret =
+  process.env.ACCESS_TOKEN_SECRET ?? randomBytes(64).toString("hex")
+const refreshTokenSecret =
+  process.env.REFRESH_TOKEN_SECRET ?? randomBytes(64).toString("hex")
 
 export const createAccessToken = (email: string): string =>
   jwt.sign({email}, accessTokenSecret, {expiresIn: "15m"})
 
-export const createRefreshToken = (email: string): string => {
-  const refreshToken = jwt.sign({email}, refreshTokenSecret)
-  refreshTokens.add(refreshToken)
-  return refreshToken
+export const createRefreshToken = async (email: string): Promise<string> => {
+  const refreshToken = await new RefreshToken({
+    refreshToken: jwt.sign({email}, refreshTokenSecret),
+  }).save()
+  return refreshToken.refreshToken
 }
 
-export const invalidateRefreshToken = (refreshToken: string): void => {
-  refreshTokens.delete(refreshToken)
+export const invalidateRefreshToken = async (
+  refreshToken: string,
+): Promise<void> => {
+  await RefreshToken.findOneAndDelete({refreshToken})
 }
 
 export const createTokenVerifyingMiddleware = (): [
@@ -54,7 +58,7 @@ const token: RequestHandler[] = [
   createRequestBodyValidatorMiddleware(tokenRequestBodySchema),
   async (req, res) => {
     const refreshToken = req.body.refreshToken
-    if (refreshTokens.has(refreshToken)) {
+    if ((await RefreshToken.findOne({refreshToken}).exec()) != null) {
       jwt.verify(
         refreshToken,
         refreshTokenSecret,
@@ -62,9 +66,10 @@ const token: RequestHandler[] = [
           if (error != null) {
             console.error(error)
             res.sendStatus(401)
+          } else {
+            const accessToken = createAccessToken(payload.email)
+            res.status(200).json({accessToken})
           }
-          const accessToken = createAccessToken(payload.email)
-          res.status(200).json({accessToken})
         },
       )
     } else {
