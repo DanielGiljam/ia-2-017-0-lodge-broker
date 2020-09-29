@@ -6,7 +6,9 @@ import createRequestBodyValidatorMiddleware from "../../util/createRequestBodyVa
 
 import {createAccessToken, createRefreshToken} from "./token"
 
-const loginRequestBodySchema: JSONSchema7 = {
+const apiURL = process.env.API_URL ?? "http://locahost:3000"
+
+export const signupRequestBodySchema: JSONSchema7 = {
   type: "object",
   properties: {
     email: {type: "string", format: "email"},
@@ -18,7 +20,7 @@ const loginRequestBodySchema: JSONSchema7 = {
 }
 
 const signup: RequestHandler[] = [
-  createRequestBodyValidatorMiddleware(loginRequestBodySchema),
+  createRequestBodyValidatorMiddleware(signupRequestBodySchema),
   async (req, res) => {
     const {email, firstName, lastName, password} = req.body
     if ((await User.findOne({email}).exec()) != null) {
@@ -32,8 +34,9 @@ const signup: RequestHandler[] = [
           password,
         }).save()
         const accessToken = createAccessToken(user.email)
-        const refreshToken = createRefreshToken(user.email)
-        res.status(200).json({status: "OK", accessToken, refreshToken})
+        const refreshToken = await createRefreshToken(user.email)
+        res.setHeader("Location", `${apiURL}/user/${user._id as string}`)
+        res.status(201).json({status: "Created", accessToken, refreshToken})
       } catch (error) {
         console.error(error)
         res.sendStatus(500)

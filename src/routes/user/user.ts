@@ -12,6 +12,8 @@ user.post("/login", login)
 user.post("/token", token)
 user.post("/signup", signup)
 user.post("/logout", logout)
-user.get("/:id", id)
+user.get("/:id", id.get)
+user.put("/:id", id.put)
+user.delete("/:id", id.delete)
 
 export default user
