@@ -23,3 +23,12 @@ Run the following command in the root of the repository:
 ```bash
 docker-compose up
 ```
+
+## TODO List
+
+- [x] Password hashing
+- [x] JWT
+- [x] `/user` and `/users`
+- [ ] `/cabin` and `/cabins`
+- [ ] `/advert` and `/adverts`
+- [ ] `/booking` and `/bookings`
