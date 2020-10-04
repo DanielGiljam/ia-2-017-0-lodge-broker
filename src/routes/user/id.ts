@@ -8,7 +8,7 @@ import {signupRequestBodySchema} from "./signup"
 const id: {[key: string]: RequestHandler | RequestHandler[]} = {
   get: async (req, res) => {
     try {
-      const user = await User.findById(req.params.id)
+      const user = await User.findById(req.params.user)
       if (user != null) {
         res.status(200).json({status: "OK", user})
       } else {
@@ -21,42 +21,28 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
   put: [
     createRequestBodyValidatorMiddleware(signupRequestBodySchema),
     async (req, res) => {
-      try {
-        const {email, firstName, lastName, password} = req.body
-        const user = await User.findById(req.params.id)
-        if (user == null) {
-          res.sendStatus(404)
-          return
-        }
-        if (
-          user.email !== email &&
-          (await User.findOne({email}).exec()) != null
-        ) {
-          res.sendStatus(409)
-          return
-        }
-        try {
-          await user.replaceOne({email, firstName, lastName, password})
-          res.status(200).json({status: "OK"})
-        } catch (error) {
-          console.error(error)
-          res.sendStatus(500)
-        }
-      } catch (error) {
-        res.sendStatus(404)
+      const {email, firstName, lastName, password} = req.body
+      const user = await User.findById(req.user?.id)
+      if (user == null) {
+        throw new Error("Unable to find authenticated user.")
       }
+      if (
+        user.email !== email &&
+        (await User.findOne({email}).exec()) != null
+      ) {
+        res.sendStatus(409)
+        return
+      }
+      await user.replaceOne({email, firstName, lastName, password})
+      res.status(200).json({status: "OK"})
     },
   ],
   delete: async (req, res) => {
-    try {
-      const user = await User.findByIdAndDelete(req.params.id)
-      if (user == null) {
-        res.sendStatus(404)
-      } else {
-        res.status(200).json({status: "OK"})
-      }
-    } catch (error) {
-      res.sendStatus(404)
+    const user = await User.findByIdAndDelete(req.user?.id)
+    if (user == null) {
+      throw new Error("Unable to find authenticated user.")
+    } else {
+      res.status(200).json({status: "OK"})
     }
   },
 }

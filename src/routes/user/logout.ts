@@ -18,7 +18,7 @@ const logout: RequestHandler[] = [
   async (req, res) => {
     const refreshToken = req.body.refreshToken
     if (refreshToken != null) {
-      invalidateRefreshToken(refreshToken)
+      await invalidateRefreshToken(refreshToken)
       res.sendStatus(200)
     } else {
       res.sendStatus(400)

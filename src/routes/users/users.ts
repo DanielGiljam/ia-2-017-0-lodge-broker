@@ -4,8 +4,8 @@ import User from "../../models/User"
 
 const users = Router()
 
-users.get("/", async (req, res) => {
-  const allUsers = await User.find({}).exec()
+users.get("/", async (_req, res) => {
+  const allUsers = await User.find()
   res.status(200).json({status: "OK", users: allUsers})
 })
 

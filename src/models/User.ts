@@ -1,10 +1,14 @@
 import {compareSync, genSaltSync, hashSync} from "bcrypt"
 import {Document, Schema, model} from "mongoose"
 
+import {IAdvert} from "./Advert"
+import {IBooking} from "./Booking"
+import {ICabin} from "./Cabin"
+
 const UserSchema = new Schema({
   email: {type: String, index: true, required: true, unique: true},
-  firstName: {type: String, required: true},
-  lastName: {type: String, required: true},
+  firstName: {type: String, index: true, required: true},
+  lastName: {type: String, index: true, required: true},
   password: {
     type: String,
     required: true,
@@ -13,15 +17,30 @@ const UserSchema = new Schema({
   },
 })
 
-UserSchema.index({firstName: 1})
-UserSchema.index({lastName: 1})
-
 interface IUserSchema extends Document {
   email: string
   firstName: string
   lastName: string
   password?: string
 }
+
+UserSchema.virtual("cabins", {
+  ref: "Cabin",
+  localField: "_id",
+  foreignField: "owner",
+})
+
+UserSchema.virtual("adverts", {
+  ref: "Advert",
+  localField: "_id",
+  foreignField: "advertiser",
+})
+
+UserSchema.virtual("bookings", {
+  ref: "Booking",
+  localField: "_id",
+  foreignField: "user",
+})
 
 UserSchema.method("checkPassword", function checkPassword(
   this: IUserSchema,
@@ -37,7 +56,17 @@ interface IUserBase extends IUserSchema {
   checkPassword: (password?: string) => boolean
 }
 
-export interface IUser extends IUserBase {}
+export interface IUser extends IUserBase {
+  cabins: Array<ICabin["_id"]>
+  adverts: Array<IAdvert["_id"]>
+  bookings?: Array<IBooking["_id"]>
+}
+
+export interface IUserPopulated extends IUserBase {
+  cabins: ICabin
+  adverts: IAdvert
+  bookings?: IBooking
+}
 
 const User = model<IUser>("User", UserSchema)
 

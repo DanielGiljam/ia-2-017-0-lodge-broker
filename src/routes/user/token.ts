@@ -21,12 +21,12 @@ const accessTokenSecret =
 const refreshTokenSecret =
   process.env.REFRESH_TOKEN_SECRET ?? randomBytes(64).toString("hex")
 
-export const createAccessToken = (email: string): string =>
-  jwt.sign({email}, accessTokenSecret, {expiresIn: "15m"})
+export const createAccessToken = (id: string): string =>
+  jwt.sign({id}, accessTokenSecret, {expiresIn: "15m"})
 
-export const createRefreshToken = async (email: string): Promise<string> => {
+export const createRefreshToken = async (id: string): Promise<string> => {
   const refreshToken = await new RefreshToken({
-    refreshToken: jwt.sign({email}, refreshTokenSecret),
+    refreshToken: jwt.sign({id}, refreshTokenSecret),
   }).save()
   return refreshToken.refreshToken
 }
