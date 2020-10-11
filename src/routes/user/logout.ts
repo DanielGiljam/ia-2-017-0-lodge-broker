@@ -17,12 +17,8 @@ const logout: RequestHandler[] = [
   createRequestBodyValidatorMiddleware(logoutRequestBodySchema),
   async (req, res) => {
     const refreshToken = req.body.refreshToken
-    if (refreshToken != null) {
-      await invalidateRefreshToken(refreshToken)
-      res.sendStatus(200)
-    } else {
-      res.sendStatus(400)
-    }
+    await invalidateRefreshToken(refreshToken)
+    res.status(200).json({status: "OK"})
   },
 ]
 
