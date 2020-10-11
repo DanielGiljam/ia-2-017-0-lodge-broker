@@ -1,0 +1,904 @@
+openapi: 3.0.2
+info:
+  title: Lodge Broker API
+  version: 0.0.0
+  description: A traditional REST API which basically does what AirBnb does.
+servers:
+  - description: Test Server
+    url: http://api:3000
+paths:
+  /user/signup:
+    post:
+      operationId: Signup
+      description: Create a user.
+      tags:
+        - Auth
+      requestBody:
+        description: The details for the new user.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/userRequest"
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        409:
+          description: Conflict - A user has already been registered with this email.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Conflict
+        400:
+          $ref: "#/components/responses/BadRequest"
+  /user/login:
+    post:
+      operationId: Login
+      description: Get access token and refresh token for an existing user.
+      tags:
+        - Auth
+      requestBody:
+        description: Email and password.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        401:
+          description: Unauthorized – Incorrect password.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Unauthorized
+        400:
+          $ref: "#/components/responses/BadRequest"
+  /user/token:
+    post:
+      operationId: RefreshToken
+      description: Get a new access token with your refresh token.
+      tags:
+        - Auth
+      requestBody:
+        description: Your refresh token.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required:
+                - refreshToken
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  accessToken:
+                    type: string
+        401:
+          description: Unauthorized – Your refresh token is invalid.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Unauthorized
+        400:
+          $ref: "#/components/responses/BadRequest"
+  /user/logout:
+    post:
+      operationId: Logout
+      description: Invalidate a refresh token.
+      tags:
+        - Auth
+      requestBody:
+        description: A refresh token.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required:
+                - refreshToken
+      responses:
+        200:
+          $ref: "#/components/responses/OK"
+        400:
+          $ref: "#/components/responses/BadRequest"
+  /user:
+    get:
+      operationId: GetAuthenticatedUser
+      description: Get the user object for the user you're authenticating as.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/User"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      operationId: UpdateUser
+      description: Update the details for the user you're authenticating as.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: The new details for the user.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/userRequest"
+      responses:
+        200:
+          $ref: "#/components/responses/OK"
+        409:
+          description: Conflict - A user has already been registered with this email.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Conflict
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: DeleteUser
+      description: Delete the user you're authenticating as.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/OK"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /user/cabins:
+    get:
+      operationId: GetCabinsForAuthenticatedUser
+      description: Get all your cabins.
+      tags:
+        - Cabin
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Cabins"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /user/adverts:
+    get:
+      operationId: GetAdvertsForAuthenticatedUser
+      description: Get all your adverts.
+      tags:
+        - Advert
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Adverts"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /user/bookings:
+    get:
+      operationId: GetBookingsForAuthenticatedUser
+      description: Get all your bookings.
+      tags:
+        - Booking
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Bookings"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /user/{userId}:
+    parameters:
+      - $ref: "#/components/parameters/userId"
+    get:
+      operationId: GetUser
+      description: Get a specific user.
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/User"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /user/{userId}/cabins:
+    parameters:
+      - $ref: "#/components/parameters/userId"
+    get:
+      operationId: GetCabinsForUser
+      description: Get all cabins for a specific user.
+      tags:
+        - Cabin
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Cabins"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /user/{userId}/adverts:
+    parameters:
+      - $ref: "#/components/parameters/userId"
+    get:
+      operationId: GetAdvertsForUser
+      description: Get all adverts for a specific user.
+      tags:
+        - Advert
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Adverts"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /users:
+    get:
+      operationId: GetUsers
+      description: Get all users.
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Users"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /cabin:
+    post:
+      operationId: AddCabin
+      description: Create a cabin entry.
+      tags:
+        - Cabin
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: The new cabin entry.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/cabinRequest"
+      responses:
+        201:
+          $ref: "#/components/responses/Created"
+        409:
+          description: Conflict – There is already an entry for a cabin with that address.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Conflict
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /cabin/{cabinId}:
+    parameters:
+      - $ref: "#/components/parameters/cabinId"
+    get:
+      operationId: GetCabin
+      description: Get a specific cabin entry.
+      tags:
+        - Cabin
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Cabin"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: UpdateCabin
+      description: Update a cabin entry.
+      tags:
+        - Cabin
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: The updated cabin entry.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/cabinRequest"
+      responses:
+        200:
+          $ref: "#/components/responses/OK"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: DeleteCabin
+      description: Delete a cabin entry.
+      tags:
+        - Cabin
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/OK"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /cabin/{cabinId}/adverts:
+    parameters:
+      - $ref: "#/components/parameters/cabinId"
+    get:
+      operationId: GetAdvertsForCabin
+      description: Get all adverts for a specific cabin entry.
+      tags:
+        - Advert
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Adverts"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /cabin/{cabinId}/advert:
+    parameters:
+      - $ref: "#/components/parameters/cabinId"
+    post:
+      operationId: CreateAdvertForCabin
+      description: Create an advert for a specific cabin entry. You must be the owner of the cabin entry for this to work.
+      tags:
+        - Advert
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: The new advert.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/advertRequest"
+      responses:
+        201:
+          $ref: "#/components/responses/Created"
+        409:
+          description: Conflict – Cabin is already being advertised at given time span.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Conflict
+        400:
+          $ref: "#/components/responses/BadRequest"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /cabins:
+    get:
+      operationId: "GetCabins"
+      description: "Get all cabins."
+      tags:
+        - Cabin
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Cabins"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /advert:
+    post:
+      operationId: "CreateAdvert"
+      description: "Create an advert."
+      tags:
+        - Advert
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: "The new advert."
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/advertRequest"
+      responses:
+        201:
+          $ref: "#/components/responses/Created"
+        409:
+          description: Conflict – Cabin is already being advertised at given time span.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Conflict
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /advert/{advertId}:
+    parameters:
+      - $ref: "#/components/parameters/advertId"
+    get:
+      operationId: "GetAdvert"
+      description: "Get a specific advert."
+      tags:
+        - Advert
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Advert"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: "UpdateAdvert"
+      description: "Update an advert."
+      tags:
+        - Advert
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: "The updated advert."
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/advertPatchRequest"
+      responses:
+        200:
+          $ref: "#/components/responses/OK"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: "DeleteAdvert"
+      description: "Delete an advert."
+      tags:
+        - Advert
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/OK"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /advert/{advertId}/booking:
+    parameters:
+      - $ref: "#/components/parameters/advertId"
+    post:
+      operationId: CreateBookingForAdvert
+      description: Create a booking for a specific advert.
+      tags:
+        - Booking
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: The booking.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/bookingRequest"
+      responses:
+        201:
+          $ref: "#/components/responses/Created"
+        409:
+          description: Conflict – Cabin is already booked at that time.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Conflict
+        400:
+          $ref: "#/components/responses/BadRequest"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /adverts:
+    get:
+      operationId: "GetAdverts"
+      description: "Get all adverts."
+      tags:
+        - Advert
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Adverts"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /booking:
+    post:
+      operationId: "CreateBooking"
+      description: "Create a booking."
+      tags:
+        - Booking
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: "The booking."
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/bookingRequest"
+      responses:
+        201:
+          $ref: "#/components/responses/Created"
+        409:
+          description: Conflict – Cabin is already booked at that time.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Conflict
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /booking/{bookingId}:
+    parameters:
+      - $ref: "#/components/parameters/bookingId"
+    get:
+      operationId: "GetBooking"
+      description: "Get a specific booking. You can only get bookings that are yours."
+      tags:
+        - Booking
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Booking"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: "UpdateBooking"
+      description: "Update a booking."
+      tags:
+        - Booking
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: "The updated booking."
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/bookingPatchRequest"
+      responses:
+        200:
+          $ref: "#/components/responses/OK"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: "DeleteBooking"
+      description: "Delete a booking."
+      tags:
+        - Booking
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/OK"
+        404:
+          $ref: "#/components/responses/NotFound"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /bookings:
+    get:
+      operationId: "GetBookings"
+      description: "Get all of your bookings."
+      tags:
+        - Booking
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          $ref: "#/components/responses/Bookings"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+components:
+  schemas:
+    userRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - firstName
+        - lastName
+        - password
+    user:
+      type: object # TODO: User Schema (OpenAPI)
+    cabinRequest:
+      type: object # TODO: Cabin Request Schema (OpenAPI)
+    cabin:
+      type: object # TODO: Cabin Schema (OpenAPI)
+    advertRequest:
+      type: object # TODO: Advert Request Schema (OpenAPI)
+    advertPatchRequest:
+      type: object # TODO: Advert Request Schema (OpenAPI)
+    advert:
+      type: object # TODO: Advert Schema (OpenAPI)
+    bookingRequest:
+      type: object # TODO: Booking Request Schema (OpenAPI)
+    bookingPatchRequest:
+      type: object # TODO: Booking Request Schema (OpenAPI)
+    booking:
+      type: object # TODO: Booking Schema (OpenAPI)
+  parameters:
+    userId:
+      name: userId
+      description: A user's ID.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    cabinId:
+      name: cabinId
+      description: A cabin entry's ID.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    advertId:
+      name: advertId
+      description: An advert's ID.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    bookingId:
+      name: bookingId
+      description: A booking's ID.
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Bad Request – Request body is invalid.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              errors:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    keyword:
+                      type: string
+                    dataPath:
+                      type: string
+                    schemaPath:
+                      type: string
+                    params:
+                      type: object
+                    message:
+                      type: string
+    OK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+    Unauthorized:
+      description: Unauthorized
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Unauthorized
+    NotFound:
+      description: Not Found
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Not Found
+    Created:
+      description: Created
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Created
+    Forbidden:
+      description: Forbidden - You are not the owner of this resource.
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Forbidden
+    User:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              user:
+                $ref: "#/components/schemas/user"
+    Users:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              users:
+                type: array
+                items:
+                  $ref: "#/components/schemas/user"
+    Cabin:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              cabin:
+                $ref: "#/components/schemas/cabin"
+    Cabins:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              cabins:
+                type: array
+                items:
+                  $ref: "#/components/schemas/cabin"
+    Advert:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              advert:
+                $ref: "#/components/schemas/advert"
+    Adverts:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              adverts:
+                type: array
+                items:
+                  $ref: "#/components/schemas/advert"
+    Booking:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              booking:
+                $ref: "#/components/schemas/booking"
+    Bookings:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              bookings:
+                type: array
+                items:
+                  $ref: "#/components/schemas/booking"
