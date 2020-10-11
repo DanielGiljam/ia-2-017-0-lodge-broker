@@ -8,7 +8,7 @@ import {signupRequestBodySchema} from "./signup"
 const id: {[key: string]: RequestHandler | RequestHandler[]} = {
   get: async (req, res) => {
     try {
-      const user = await User.findById(req.params.user)
+      const user = await User.findById(req.params.user ?? req.user?.id)
       if (user != null) {
         res.status(200).json({status: "OK", user})
       } else {

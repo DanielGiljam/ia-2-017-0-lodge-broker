@@ -100,7 +100,7 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
         availableTo,
       })
       res.setHeader("Location", `${apiURL}/advert/${advert._id as string}`)
-      res.status(203).json({status: "Created"})
+      res.status(201).json({status: "Created"})
     },
   ],
 }

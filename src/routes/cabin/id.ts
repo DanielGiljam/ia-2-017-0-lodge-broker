@@ -109,7 +109,7 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
           beach,
         })
         res.setHeader("Location", `${apiURL}/cabin/${cabin._id as string}`)
-        res.status(203).json({status: "Created"})
+        res.status(201).json({status: "Created"})
       }
     },
   ],

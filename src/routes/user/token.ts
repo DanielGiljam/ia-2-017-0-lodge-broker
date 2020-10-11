@@ -67,8 +67,8 @@ const token: RequestHandler[] = [
             console.error(error)
             res.sendStatus(401)
           } else {
-            const accessToken = createAccessToken(payload.email)
-            res.status(200).json({accessToken})
+            const accessToken = createAccessToken(payload.id)
+            res.status(200).json({status: "OK", accessToken})
           }
         },
       )

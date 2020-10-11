@@ -35,7 +35,7 @@ user.use(
   bookings,
 )
 user.get("/:user", id.get)
-user.delete("/", id.delete)
 user.put("/", id.put)
+user.delete("/", id.delete)
 
 export default user
