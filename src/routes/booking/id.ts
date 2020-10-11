@@ -17,7 +17,7 @@ const postBookingRequestBodySchema: JSONSchema7 = {
   required: ["from", "to"],
 }
 
-const apiURL = process.env.API_URL ?? "http://locahost:3000"
+const apiURL = process.env.API_URL ?? "http://localhost:3000"
 
 const id: {[key: string]: RequestHandler | RequestHandler[]} = {
   get: async (req, res) => {

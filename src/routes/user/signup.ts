@@ -17,7 +17,7 @@ export const signupRequestBodySchema: JSONSchema7 = {
   required: ["email", "firstName", "lastName", "password"],
 }
 
-const apiURL = process.env.API_URL ?? "http://locahost:3000"
+const apiURL = process.env.API_URL ?? "http://localhost:3000"
 
 const signup: RequestHandler[] = [
   createRequestBodyValidatorMiddleware(signupRequestBodySchema),
