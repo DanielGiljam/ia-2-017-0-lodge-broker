@@ -5,6 +5,8 @@ import express from "express"
 import morgan from "morgan"
 
 import connectToDB from "./connectToDB"
+import errorHandler from "./middlewares/errorHandler"
+import jsonMiddleware from "./middlewares/jsonMiddleware"
 import advert from "./routes/advert"
 import adverts from "./routes/adverts"
 import booking from "./routes/booking"
@@ -14,17 +16,14 @@ import cabins from "./routes/cabins"
 import user from "./routes/user"
 import {createTokenVerifyingMiddleware} from "./routes/user/token"
 import users from "./routes/users"
-import dropDatabase from "./util/dropDatabase"
 
 const server = async (): Promise<void> => {
   await connectToDB()
   const port = process.env.PORT ?? 3000
   express()
-    .get("/", (_req, res) => res.send("ia-2-017-0-lodge-broker"))
-    .delete("/", dropDatabase)
     .use(morgan("dev"))
-    .use(express.json())
     .use(createTokenVerifyingMiddleware())
+    .use(jsonMiddleware())
     .use("/user", user)
     .use("/users", users)
     .use("/cabin", cabin)
@@ -33,6 +32,7 @@ const server = async (): Promise<void> => {
     .use("/adverts", adverts)
     .use("/booking", booking)
     .use("/bookings", bookings)
+    .use(errorHandler())
     .listen(port, () => console.log(`Server listening on port ${port}.`))
 }
 

@@ -1,7 +1,7 @@
 import {RequestHandler} from "express"
 import {JSONSchema7} from "json-schema"
 
-import createRequestBodyValidatorMiddleware from "../../util/createRequestBodyValidatorMiddleware"
+import requestBodyValidator from "../../middlewares/requestBodyValidator"
 
 import {invalidateRefreshToken} from "./token"
 
@@ -14,7 +14,7 @@ const logoutRequestBodySchema: JSONSchema7 = {
 }
 
 const logout: RequestHandler[] = [
-  createRequestBodyValidatorMiddleware(logoutRequestBodySchema),
+  requestBodyValidator(logoutRequestBodySchema),
   async (req, res) => {
     const refreshToken = req.body.refreshToken
     await invalidateRefreshToken(refreshToken)

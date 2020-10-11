@@ -1,9 +1,9 @@
 import {RequestHandler} from "express"
 import {JSONSchema7} from "json-schema"
 
+import requestBodyValidator from "../../middlewares/requestBodyValidator"
+import createAllowOnlyResourceAuthorMiddleware from "../../middlewares/resourceExtractor"
 import Cabin from "../../models/Cabin"
-import createAllowOnlyResourceAuthorMiddleware from "../../util/createGetResourceFromURLMiddleware"
-import createRequestBodyValidatorMiddleware from "../../util/createRequestBodyValidatorMiddleware"
 
 // TODO: improve postCabinRequestBodySchema so that it's possible to POST from /cabin or /user/:user/cabin
 const postCabinRequestBodySchema: JSONSchema7 = {
@@ -49,27 +49,28 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
       if (cabin != null) {
         res.status(200).json({status: "OK", cabin})
       } else {
-        res.sendStatus(404)
+        res.status(404).json({status: "Not Found"})
       }
     } catch (error) {
-      res.sendStatus(404)
+      res.status(404).json({status: "Not Found"})
     }
   },
   patch: [
     createAllowOnlyResourceAuthorMiddleware("cabin", true),
-    createRequestBodyValidatorMiddleware(postCabinRequestBodySchema),
-    async (req, res) => {
+    requestBodyValidator(postCabinRequestBodySchema),
+    async (req, res, next) => {
       const {address, size, sauna, beach} = req.body
       const squashedAddress = squashAddress(address)
       const cabin = req.resources?.cabin
       if (cabin == null) {
-        throw new Error("Unexpected undefined value: req.resource.")
+        next(new Error("Unexpected undefined value: req.resource."))
+        return
       }
       if (
         cabin.address.squashed !== squashedAddress &&
         (await Cabin.findOne({"address.squashed": squashAddress})) != null
       ) {
-        res.sendStatus(409)
+        res.status(409).json({status: "Conflict"})
         return
       }
       await cabin.replaceOne({
@@ -84,22 +85,23 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
   ],
   delete: [
     createAllowOnlyResourceAuthorMiddleware("cabin", true),
-    async (req, res) => {
+    async (req, res, next) => {
       const cabin = req.resources?.cabin
       if (cabin == null) {
-        throw new Error("Unexpected undefined value: req.resource.")
+        next(new Error("Unexpected undefined value: req.resource."))
+        return
       }
       await cabin.deleteOne()
       res.status(200).json({status: "OK"})
     },
   ],
   post: [
-    createRequestBodyValidatorMiddleware(postCabinRequestBodySchema),
+    requestBodyValidator(postCabinRequestBodySchema),
     async (req, res) => {
       const {address, size, sauna, beach} = req.body
       const squashedAddress = squashAddress(address)
       if ((await Cabin.findOne({"address.squashed": squashAddress})) != null) {
-        res.sendStatus(409)
+        res.status(409).json({status: "Conflict"})
       } else {
         const cabin = await new Cabin({
           address: {...address, squashed: squashedAddress},
@@ -107,7 +109,7 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
           size,
           sauna,
           beach,
-        })
+        }).save()
         res.setHeader("Location", `${apiURL}/cabin/${cabin._id as string}`)
         res.status(201).json({status: "Created"})
       }

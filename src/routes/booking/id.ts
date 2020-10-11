@@ -2,10 +2,10 @@ import {RequestHandler} from "express"
 import {JSONSchema7} from "json-schema"
 import moment from "moment"
 
+import requestBodyValidator from "../../middlewares/requestBodyValidator"
+import resourceExtractor from "../../middlewares/resourceExtractor"
 import Advert from "../../models/Advert"
 import Booking from "../../models/Booking"
-import createGetResourceFromURLMiddleware from "../../util/createGetResourceFromURLMiddleware"
-import createRequestBodyValidatorMiddleware from "../../util/createRequestBodyValidatorMiddleware"
 
 // TODO: improve postBookingRequestBodySchema so that it's possible to POST from /booking or /user/:user/booking
 const postBookingRequestBodySchema: JSONSchema7 = {
@@ -31,26 +31,27 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
       if (booking != null) {
         res.status(200).json({status: "OK", booking})
       } else {
-        res.sendStatus(404)
+        res.status(404).json({status: "Not Found"})
       }
     } catch (error) {
-      res.sendStatus(404)
+      res.status(404).json({status: "Not Found"})
     }
   },
   patch: [
-    createGetResourceFromURLMiddleware("booking", true),
-    createRequestBodyValidatorMiddleware(postBookingRequestBodySchema),
-    async (req, res) => {
+    resourceExtractor("booking", true),
+    requestBodyValidator(postBookingRequestBodySchema),
+    async (req, res, next) => {
       const booking = req.resources?.booking
       if (booking == null) {
-        throw new Error("Unexpected undefined value: req.resources.booking.")
+        next(new Error("Unexpected undefined value: req.resources.booking."))
+        return
       }
       const advert =
         req.resources?.advert ?? (await booking.populate("advert")).advert
       const from = moment(req.body.from, moment.ISO_8601)
       const to = moment(req.body.to, moment.ISO_8601)
       if (await Advert.isAlreadyBooked(advert, from, to, booking._id)) {
-        res.sendStatus(409)
+        res.status(409).json({status: "Conflict"})
         return
       }
       await booking.updateOne({from, to})
@@ -58,36 +59,41 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
     },
   ],
   delete: [
-    createGetResourceFromURLMiddleware("booking", true),
-    async (req, res) => {
+    resourceExtractor("booking", true),
+    async (req, res, next) => {
       const booking = req.resources?.booking
       if (booking == null) {
-        throw new Error("Unexpected undefined value: req.resources.booking.")
+        next(new Error("Unexpected undefined value: req.resources.booking."))
+        return
       }
       await booking.deleteOne()
       res.status(200).json({status: "OK"})
     },
   ],
   post: [
-    createRequestBodyValidatorMiddleware(postBookingRequestBodySchema),
-    async (req, res) => {
+    requestBodyValidator(postBookingRequestBodySchema),
+    async (req, res, next) => {
       const advert =
         req.resources?.advert ?? (await Advert.findById(req.body.advert))
       if (advert == null) {
-        throw new Error(
-          `Unexpected undefined object: advert with id "${
-            req.body.advert as string
-          }".`,
+        next(
+          new Error(
+            `Unexpected undefined object: advert with id "${
+              req.body.advert as string
+            }".`,
+          ),
         )
+        return
       }
       const user = req.resources?.user?._id ?? req.user?.id
       if (user == null) {
-        throw new Error("Unexpected undefined value: req.user.id.")
+        next(new Error("Unexpected undefined value: req.user.id."))
+        return
       }
       const from = moment(req.body.from, moment.ISO_8601)
       const to = moment(req.body.to, moment.ISO_8601)
       if (await Advert.isAlreadyBooked(advert, from, to)) {
-        res.sendStatus(409)
+        res.status(409).json({status: "Conflict"})
         return
       }
       const booking = await new Booking({
@@ -95,7 +101,7 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
         user,
         from,
         to,
-      })
+      }).save()
       res.setHeader("Location", `${apiURL}/booking/${booking._id as string}`)
       res.status(201).json({status: "Created"})
     },

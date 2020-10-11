@@ -2,10 +2,10 @@ import {RequestHandler} from "express"
 import {JSONSchema7} from "json-schema"
 import moment from "moment"
 
+import requestBodyValidator from "../../middlewares/requestBodyValidator"
+import resourceExtractor from "../../middlewares/resourceExtractor"
 import Advert from "../../models/Advert"
 import Cabin from "../../models/Cabin"
-import createGetResourceFromURLMiddleware from "../../util/createGetResourceFromURLMiddleware"
-import createRequestBodyValidatorMiddleware from "../../util/createRequestBodyValidatorMiddleware"
 
 // TODO: improve postAdvertRequestBodySchema so that it's possible to POST from /advert or /user/:user/advert
 const postAdvertRequestBodySchema: JSONSchema7 = {
@@ -14,7 +14,7 @@ const postAdvertRequestBodySchema: JSONSchema7 = {
     availableFrom: {type: "string", format: "date"},
     availableTo: {type: "string", format: "date"},
   },
-  required: ["availabeFrom", "availableTo"],
+  required: ["availableFrom", "availableTo"],
 }
 
 const apiURL = process.env.API_URL ?? "http://localhost:3000"
@@ -28,19 +28,20 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
       if (advert != null) {
         res.status(200).json({status: "OK", cabin: advert})
       } else {
-        res.sendStatus(404)
+        res.status(404).json({status: "Not Found"})
       }
     } catch (error) {
-      res.sendStatus(404)
+      res.status(404).json({status: "Not Found"})
     }
   },
   patch: [
-    createGetResourceFromURLMiddleware("advert", true),
-    createRequestBodyValidatorMiddleware(postAdvertRequestBodySchema),
-    async (req, res) => {
+    resourceExtractor("advert", true),
+    requestBodyValidator(postAdvertRequestBodySchema),
+    async (req, res, next) => {
       const advert = req.resources?.advert
       if (advert == null) {
-        throw new Error("Unexpected undefined value: req.resource.")
+        next(new Error("Unexpected undefined value: req.resource."))
+        return
       }
       const cabin =
         req.resources?.cabin ?? (await advert.populate("cabin")).cabin
@@ -49,7 +50,7 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
       if (
         await Cabin.isUnavailable(cabin, availableFrom, availableTo, advert._id)
       ) {
-        res.sendStatus(409)
+        res.status(409).json({status: "Conflict"})
         return
       }
       await advert.updateOne({availableFrom, availableTo})
@@ -57,40 +58,45 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
     },
   ],
   delete: [
-    createGetResourceFromURLMiddleware("advert", true),
-    async (req, res) => {
+    resourceExtractor("advert", true),
+    async (req, res, next) => {
       const advert = req.resources?.cabin
       if (advert == null) {
-        throw new Error("Unexpected undefined value: req.resource.")
+        next(new Error("Unexpected undefined value: req.resource."))
+        return
       }
       await advert.deleteOne()
       res.status(200).json({status: "OK"})
     },
   ],
   post: [
-    createRequestBodyValidatorMiddleware(postAdvertRequestBodySchema),
-    async (req, res) => {
+    requestBodyValidator(postAdvertRequestBodySchema),
+    async (req, res, next) => {
       const cabin =
         req.resources?.cabin ?? (await Cabin.findById(req.body.cabin))
       if (cabin == null) {
-        throw new Error(
-          `Unexpected undefined object: cabin with id "${
-            req.body.cabin as string
-          }".`,
+        next(
+          new Error(
+            `Unexpected undefined object: cabin with id "${
+              req.body.cabin as string
+            }".`,
+          ),
         )
+        return
       }
-      const advertiser = req.resources?.user?._id ?? req.user?.id
+      const advertiser = req.resources?.user?._id?.toString() ?? req.user?.id
       if (advertiser == null) {
-        throw new Error("Unexpected undefined value: req.user.id.")
+        next(new Error("Unexpected undefined value: req.user.id."))
+        return
       }
-      if (cabin.owner !== advertiser) {
-        res.sendStatus(403)
+      if (cabin.owner.toString() !== advertiser) {
+        res.status(403).json({status: "Forbidden"})
         return
       }
       const availableFrom = moment(req.body.availableFrom, moment.ISO_8601)
       const availableTo = moment(req.body.availableTo, moment.ISO_8601)
       if (await Cabin.isUnavailable(cabin, availableFrom, availableTo)) {
-        res.sendStatus(409)
+        res.status(409).json({status: "Conflict"})
         return
       }
       const advert = await new Advert({
@@ -98,7 +104,7 @@ const id: {[key: string]: RequestHandler | RequestHandler[]} = {
         advertiser,
         availableFrom,
         availableTo,
-      })
+      }).save()
       res.setHeader("Location", `${apiURL}/advert/${advert._id as string}`)
       res.status(201).json({status: "Created"})
     },

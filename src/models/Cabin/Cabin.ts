@@ -50,7 +50,9 @@ CabinSchema.statics.isUnavailable = async (
   to: Moment,
   idOfAdvertToExclude?: string,
 ): Promise<boolean> => {
-  const cabinPopulated = (await cabin.populate("adverts")) as ICabinPopulated
+  const cabinPopulated = (await cabin
+    .populate("adverts")
+    .execPopulate()) as ICabinPopulated
   let adverts: IAdvert[]
   if (idOfAdvertToExclude != null) {
     const indexOfAdvertToExclude = cabinPopulated.adverts.findIndex(

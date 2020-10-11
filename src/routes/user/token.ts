@@ -5,8 +5,8 @@ import expressJWT from "express-jwt"
 import {JSONSchema7} from "json-schema"
 import jwt from "jsonwebtoken"
 
+import requestBodyValidator from "../../middlewares/requestBodyValidator"
 import RefreshToken from "../../models/RefreshToken"
-import createRequestBodyValidatorMiddleware from "../../util/createRequestBodyValidatorMiddleware"
 
 const tokenRequestBodySchema: JSONSchema7 = {
   type: "object",
@@ -47,15 +47,17 @@ export const createTokenVerifyingMiddleware = (): [
   }).unless({
     path: ["/user/login", "/user/token", "/user/signup", "/user/logout"],
   }),
-  (error, _req, res, _next) => {
+  (error, _req, res, next) => {
     if (error.name === "UnauthorizedError") {
-      res.sendStatus(401)
+      res.status(401).json({status: "Unauthorized"})
+      return
     }
+    next(error)
   },
 ]
 
 const token: RequestHandler[] = [
-  createRequestBodyValidatorMiddleware(tokenRequestBodySchema),
+  requestBodyValidator(tokenRequestBodySchema),
   async (req, res) => {
     const refreshToken = req.body.refreshToken
     if ((await RefreshToken.findOne({refreshToken}).exec()) != null) {
@@ -65,7 +67,7 @@ const token: RequestHandler[] = [
         (error: any, payload: any) => {
           if (error != null) {
             console.error(error)
-            res.sendStatus(401)
+            res.status(401).json({status: "Unauthorized"})
           } else {
             const accessToken = createAccessToken(payload.id)
             res.status(200).json({status: "OK", accessToken})
@@ -73,7 +75,7 @@ const token: RequestHandler[] = [
         },
       )
     } else {
-      res.sendStatus(401)
+      res.status(401).json({status: "Unauthorized"})
     }
   },
 ]

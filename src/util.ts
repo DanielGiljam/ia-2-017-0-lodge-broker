@@ -28,3 +28,6 @@ export const allFulfilled = async <T>(
     throw new Error("Promises rejected.")
   }
 }
+
+export const capitalize = (string: string): string =>
+  string[0].toUpperCase() + string.substr(1)

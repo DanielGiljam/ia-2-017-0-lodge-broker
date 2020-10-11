@@ -1,8 +1,8 @@
 import {RequestHandler} from "express"
 import {JSONSchema7} from "json-schema"
 
+import requestBodyValidator from "../../middlewares/requestBodyValidator"
 import User from "../../models/User"
-import createRequestBodyValidatorMiddleware from "../../util/createRequestBodyValidatorMiddleware"
 
 import {createAccessToken, createRefreshToken} from "./token"
 
@@ -16,7 +16,7 @@ const loginRequestBodySchema: JSONSchema7 = {
 }
 
 const login: RequestHandler[] = [
-  createRequestBodyValidatorMiddleware(loginRequestBodySchema),
+  requestBodyValidator(loginRequestBodySchema),
   async (req, res) => {
     const user = await User.findOne({email: req.body.email}, "+password").exec()
     if (user?.checkPassword(req.body.password) === true) {
@@ -24,7 +24,7 @@ const login: RequestHandler[] = [
       const refreshToken = await createRefreshToken(user._id)
       res.status(200).json({status: "OK", accessToken, refreshToken})
     } else {
-      res.sendStatus(401)
+      res.status(401).json({status: "Unauthorized"})
     }
   },
 ]

@@ -1,8 +1,8 @@
 import {RequestHandler} from "express"
 import {JSONSchema7} from "json-schema"
 
+import requestBodyValidator from "../../middlewares/requestBodyValidator"
 import User from "../../models/User"
-import createRequestBodyValidatorMiddleware from "../../util/createRequestBodyValidatorMiddleware"
 
 import {createAccessToken, createRefreshToken} from "./token"
 
@@ -20,11 +20,11 @@ export const signupRequestBodySchema: JSONSchema7 = {
 const apiURL = process.env.API_URL ?? "http://localhost:3000"
 
 const signup: RequestHandler[] = [
-  createRequestBodyValidatorMiddleware(signupRequestBodySchema),
-  async (req, res) => {
+  requestBodyValidator(signupRequestBodySchema),
+  async (req, res, next) => {
     const {email, firstName, lastName, password} = req.body
     if ((await User.findOne({email}).exec()) != null) {
-      res.sendStatus(409)
+      res.status(409).json({status: "Conflict"})
     } else {
       try {
         const user = await new User({
@@ -38,8 +38,7 @@ const signup: RequestHandler[] = [
         res.setHeader("Location", `${apiURL}/user/${user._id as string}`)
         res.status(201).json({status: "Created", accessToken, refreshToken})
       } catch (error) {
-        console.error(error)
-        res.sendStatus(500)
+        next(error)
       }
     }
   },
