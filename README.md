@@ -29,6 +29,6 @@ docker-compose up
 - [x] Password hashing
 - [x] JWT
 - [x] `/user` and `/users`
-- [ ] `/cabin` and `/cabins`
-- [ ] `/advert` and `/adverts`
-- [ ] `/booking` and `/bookings`
+- [x] `/cabin` and `/cabins`
+- [x] `/advert` and `/adverts`
+- [x] `/booking` and `/bookings`
