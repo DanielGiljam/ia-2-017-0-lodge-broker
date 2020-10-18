@@ -1,0 +1,4172 @@
+{
+  "info": {
+    "_postman_id": "400da4da-897d-4063-88f3-92d330a26196",
+    "name": "Lodge Broker API Test",
+    "description": "A traditional REST API which basically does what AirBnb does.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "User Lifecycle",
+      "item": [
+        {
+          "name": "Signup",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "4f521797-7718-410c-a007-9f272e1a6c40",
+                "exec": [
+                  "pm.collectionVariables.set(\"user1Email\", pm.variables.replaceIn(\"{{$randomEmail}}\"))",
+                  "pm.collectionVariables.set(\"user1FirstName\", pm.variables.replaceIn(\"{{$randomFirstName}}\"))",
+                  "pm.collectionVariables.set(\"user1LastName\", pm.variables.replaceIn(\"{{$randomLastName}}\"))",
+                  "pm.collectionVariables.set(\"user1Password\", pm.variables.replaceIn(\"{{$randomPassword}}\"))"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "43b04d91-f371-4023-8899-1a6f9f069dcc",
+                "exec": [
+                  "const schema = {",
+                  "    type: \"object\",",
+                  "    properties: {",
+                  "        status: {type: \"string\"},",
+                  "        accessToken: {type: \"string\"},",
+                  "        refreshToken: {type: \"string\"},",
+                  "    },",
+                  "    required: [\"status\", \"accessToken\", \"refreshToken\"],",
+                  "    additionalProperties: false,",
+                  "};",
+                  "",
+                  "",
+                  "pm.test('Response is ok to process', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Reponse has Location header', function () {",
+                  "    pm.response.to.have.header(\"Location\");",
+                  "    pm.collectionVariables.set(\"user1Url\", pm.response.headers.get(\"Location\"));",
+                  "});",
+                  "pm.test('Response has Content-Type set to application/json', function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+                  "});",
+                  "pm.test('Response body adheres to schema', function () {",
+                  "    pm.response.to.have.jsonSchema(schema);",
+                  "    pm.collectionVariables.set(\"user1AccessToken1\", pm.response.json().accessToken);",
+                  "    pm.collectionVariables.set(\"user1RefreshToken1\", pm.response.json().refreshToken);",
+                  "});",
+                  "",
+                  "const request1 = {",
+                  "    url: pm.collectionVariables.get(\"user1Url\"),",
+                  "    header: {",
+                  "        Authorization: pm.variables.replaceIn(\"Bearer {{user1AccessToken1}}\"),",
+                  "    },",
+                  "};",
+                  "",
+                  "pm.sendRequest(request1, (error, response) => {",
+                  "  if (error) {",
+                  "    console.error(error);",
+                  "  }",
+                  "  pm.test('Can make request to URL provided in Location header', () => {",
+                  "    pm.expect(error).to.equal(null);",
+                  "    pm.expect(response).to.have.property('code', 200);",
+                  "    pm.expect(response).to.have.property('status', 'OK');",
+                  "  });",
+                  "});",
+                  "",
+                  "const request2 = {",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/user/token\"),",
+                  "    method: \"POST\",",
+                  "    header: {",
+                  "        \"Content-Type\": \"application/json\",",
+                  "    },",
+                  "    body: {",
+                  "        mode: \"raw\",",
+                  "        raw: JSON.stringify({",
+                  "            refreshToken: pm.variables.replaceIn(\"{{user1RefreshToken1}}\"),",
+                  "        }),",
+                  "    },",
+                  "};",
+                  "",
+                  "pm.sendRequest(request2, (error, response) => {",
+                  "  if (error) {",
+                  "    console.error(error);",
+                  "  }",
+                  "  pm.test('Can use refresh token provided in response body', () => {",
+                  "    pm.expect(error).to.equal(null);",
+                  "    pm.expect(response).to.have.property('code', 200);",
+                  "    pm.expect(response).to.have.property('status', 'OK');",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{user1Email}}\",\n    \"firstName\": \"{{user1FirstName}}\",\n    \"lastName\": \"{{user1LastName}}\",\n    \"password\": \"{{user1Password}}\"\n}",
+              "options": {
+                "raw": {}
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "signup"]
+            },
+            "description": "Create a user."
+          },
+          "response": [
+            {
+              "name": "Conflict - A user has already been registered with this email.",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/signup",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "signup"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "<string>"
+            },
+            {
+              "name": "Bad Request – Request body is invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/signup",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "signup"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\"\n}"
+            },
+            {
+              "name": "Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/signup",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "signup"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\",\n \"accessToken\": \"<string>\",\n \"refreshToken\": \"<string>\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "08cd2219-9322-43c6-8462-350fac4e3a12",
+                "exec": [
+                  "const schema = {",
+                  "    type: \"object\",",
+                  "    properties: {",
+                  "        status: {type: \"string\"},",
+                  "        accessToken: {type: \"string\"},",
+                  "        refreshToken: {type: \"string\"},",
+                  "    },",
+                  "    required: [\"status\", \"accessToken\", \"refreshToken\"],",
+                  "    additionalProperties: false,",
+                  "};",
+                  "",
+                  "",
+                  "pm.test('Response is ok to process', function () {",
+                  "    pm.response.to.be.ok;",
+                  "});",
+                  "pm.test('Response has Content-Type set to application/json', function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+                  "});",
+                  "pm.test('Response body adheres to schema', function () {",
+                  "    pm.response.to.have.jsonSchema(schema);",
+                  "    pm.collectionVariables.set(\"user1AccessToken2\", pm.response.json().accessToken);",
+                  "    pm.collectionVariables.set(\"user1RefreshToken2\", pm.response.json().refreshToken);",
+                  "});",
+                  "",
+                  "const request1 = {",
+                  "    url: pm.collectionVariables.get(\"user1Url\"),",
+                  "    header: {",
+                  "        Authorization: pm.variables.replaceIn(\"Bearer {{user1AccessToken2}}\"),",
+                  "    },",
+                  "};",
+                  "",
+                  "pm.sendRequest(request1, (error, response) => {",
+                  "  if (error) {",
+                  "    console.error(error);",
+                  "  }",
+                  "  pm.test('Can use access token provided in response body', () => {",
+                  "    pm.expect(error).to.equal(null);",
+                  "    pm.expect(response).to.have.property('code', 200);",
+                  "    pm.expect(response).to.have.property('status', 'OK');",
+                  "  });",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{user1Email}}\",\n    \"password\": \"{{user1Password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "login"]
+            },
+            "description": "Get access token and refresh token for an existing user."
+          },
+          "response": [
+            {
+              "name": "Unauthorized – Incorrect password.",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "login"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "<string>"
+            },
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\",\n \"accessToken\": \"<string>\",\n \"refreshToken\": \"<string>\"\n}"
+            },
+            {
+              "name": "Bad Request – Request body is invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "login"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "b34f92a7-93eb-48dd-8e56-596a78115564",
+                "exec": [
+                  "const schema = {",
+                  "    type: \"object\",",
+                  "    properties: {",
+                  "        status: {type: \"string\"},",
+                  "        accessToken: {type: \"string\"},",
+                  "    },",
+                  "    required: [\"status\", \"accessToken\"],",
+                  "    additionalProperties: false,",
+                  "};",
+                  "",
+                  "",
+                  "pm.test('Response is ok to process', function () {",
+                  "    pm.response.to.be.ok;",
+                  "});",
+                  "pm.test('Response has Content-Type set to application/json', function () {",
+                  "    pm.response.to.have.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+                  "});",
+                  "pm.test('Response body adheres to schema', function () {",
+                  "    pm.response.to.have.jsonSchema(schema);",
+                  "    pm.collectionVariables.set(\"user1AccessToken3\", pm.response.json().accessToken);",
+                  "});",
+                  "",
+                  "const request1 = {",
+                  "    url: pm.collectionVariables.get(\"user1Url\"),",
+                  "    header: {",
+                  "        Authorization: pm.variables.replaceIn(\"Bearer {{user1AccessToken3}}\"),",
+                  "    },",
+                  "};",
+                  "",
+                  "pm.sendRequest(request1, (error, response) => {",
+                  "  if (error) {",
+                  "    console.error(error);",
+                  "  }",
+                  "  pm.test('Can use access token provided in response body', () => {",
+                  "    pm.expect(error).to.equal(null);",
+                  "    pm.expect(response).to.have.property('code', 200);",
+                  "    pm.expect(response).to.have.property('status', 'OK');",
+                  "    pm.collectionVariables.set(\"user1AccessToken\", pm.response.json().accessToken)",
+                  "  });",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{user1RefreshToken2}}\"\n}",
+              "options": {
+                "raw": {}
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/token",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "token"]
+            },
+            "description": "Get a new access token with your refresh token."
+          },
+          "response": [
+            {
+              "name": "Bad Request – Request body is invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"refreshToken\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/token",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "token"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\"\n}"
+            },
+            {
+              "name": "Unauthorized – Your refresh token is invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"refreshToken\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/token",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "token"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "<string>"
+            },
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"refreshToken\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/token",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "token"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\",\n \"accessToken\": \"<string>\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "13beeaa7-7d70-4b5c-a204-57cdbc63ba24",
+                "exec": [
+                  "const request1 = {",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/user/token\"),",
+                  "    method: \"POST\",",
+                  "    header: {",
+                  "        \"Content-Type\": \"application/json\",",
+                  "    },",
+                  "    body: {",
+                  "        mode: \"raw\",",
+                  "        raw: JSON.stringify({",
+                  "            refreshToken: pm.variables.replaceIn(\"{{user1RefreshToken2}}\"),",
+                  "        }),",
+                  "    },",
+                  "};",
+                  "",
+                  "pm.sendRequest(request1, (error, response) => {",
+                  "  if (error) {",
+                  "    console.error(error);",
+                  "  }",
+                  "  pm.test('Cannot anymore use the same refresh token', () => {",
+                  "    pm.expect(error).to.equal(null);",
+                  "    pm.expect(response).to.have.property('code', 401);",
+                  "    pm.expect(response).to.have.property('status', 'Unauthorized');",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{user1RefreshToken2}}\"\n}",
+              "options": {
+                "raw": {}
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "logout"]
+            },
+            "description": "Invalidate a refresh token."
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"refreshToken\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/logout",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "logout"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\"\n}"
+            },
+            {
+              "name": "Bad Request – Request body is invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"refreshToken\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/logout",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "logout"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Authenticated User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "<Bearer Token>",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["user"]
+            },
+            "description": "Get the user object for the user you're authenticating as."
+          },
+          "response": [
+            {
+              "name": "Unauthorized",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/user",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "<string>"
+            },
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/user",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\",\n \"user\": \"<object>\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "926e6951-67d6-481f-b3ef-dea15e591de3",
+                "exec": [
+                  "pm.collectionVariables.set(\"user1Email\", pm.variables.replaceIn(\"{{$randomEmail}}\"))",
+                  "pm.collectionVariables.set(\"user1FirstName\", pm.variables.replaceIn(\"{{$randomFirstName}}\"))",
+                  "pm.collectionVariables.set(\"user1LastName\", pm.variables.replaceIn(\"{{$randomLastName}}\"))",
+                  "pm.collectionVariables.set(\"user1Password\", pm.variables.replaceIn(\"{{$randomPassword}}\"))"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "dd9a1889-7165-46f4-a410-32c43f5a0dde",
+                "exec": [
+                  "pm.test('Response is ok to process', function () {",
+                  "    pm.response.to.be.ok;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{user1Email}}\",\n    \"firstName\": \"{{user1FirstName}}\",\n    \"lastName\": \"{{user1LastName}}\",\n    \"password\": \"{{user1Password}}\"\n}",
+              "options": {
+                "raw": {}
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["user"]
+            },
+            "description": "Update the details for the user you're authenticating as."
+          },
+          "response": [
+            {
+              "name": "Bad Request – Request body is invalid.",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\"\n}"
+            },
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\"\n}"
+            },
+            {
+              "name": "Conflict - A user has already been registered with this email.",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "<string>"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "<string>"
+            }
+          ]
+        },
+        {
+          "name": "Delete User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "c6c7b0ab-bb67-4c43-933f-8a3b594e8e0a",
+                "exec": [
+                  "const request1 = {",
+                  "    url: pm.collectionVariables.get(\"user1Url\"),",
+                  "    header: {",
+                  "        Authorization: pm.variables.replaceIn(\"Bearer {{user1AccessToken3}}\"),",
+                  "    },",
+                  "};",
+                  "",
+                  "pm.sendRequest(request1, (error, response) => {",
+                  "  if (error) {",
+                  "    console.error(error);",
+                  "  }",
+                  "  pm.test('The user doesn\\'t exist anymore', () => {",
+                  "    pm.expect(error).to.equal(null);",
+                  "    pm.expect(response).to.have.property('code', 404);",
+                  "    pm.expect(response).to.have.property('status', 'Not Found');",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user1AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["user"]
+            },
+            "description": "Delete the user you're authenticating as."
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/user",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n \"status\": \"<string>\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/user",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "<string>"
+            }
+          ]
+        }
+      ],
+      "protocolProfileBehavior": {}
+    },
+    {
+      "name": "User 1",
+      "item": [
+        {
+          "name": "Signup",
+          "item": [
+            {
+              "name": "Signup",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "e9637ed6-5d74-427a-92d7-ba583d41008d",
+                    "exec": [
+                      "pm.collectionVariables.set(\"user1Email\", pm.variables.replaceIn(\"{{$randomEmail}}\"))",
+                      "pm.collectionVariables.set(\"user1FirstName\", pm.variables.replaceIn(\"{{$randomFirstName}}\"))",
+                      "pm.collectionVariables.set(\"user1LastName\", pm.variables.replaceIn(\"{{$randomLastName}}\"))",
+                      "pm.collectionVariables.set(\"user1Password\", pm.variables.replaceIn(\"{{$randomPassword}}\"))"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "600bf453-61d0-4b89-ab32-bfdb34099cab",
+                    "exec": [
+                      "const schema = {",
+                      "    type: \"object\",",
+                      "    properties: {",
+                      "        status: {type: \"string\"},",
+                      "        accessToken: {type: \"string\"},",
+                      "        refreshToken: {type: \"string\"},",
+                      "    },",
+                      "    required: [\"status\", \"accessToken\", \"refreshToken\"],",
+                      "    additionalProperties: false,",
+                      "};",
+                      "",
+                      "",
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user1Url\", pm.response.headers.get(\"Location\"));",
+                      "});",
+                      "pm.test('Response has Content-Type set to application/json', function () {",
+                      "    pm.response.to.have.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+                      "});",
+                      "pm.test('Response body adheres to schema', function () {",
+                      "    pm.response.to.have.jsonSchema(schema);",
+                      "    pm.collectionVariables.set(\"user1AccessToken\", pm.response.json().accessToken);",
+                      "    pm.collectionVariables.set(\"user1RefreshToken\", pm.response.json().refreshToken);",
+                      "});",
+                      "",
+                      "const request1 = {",
+                      "    url: pm.collectionVariables.get(\"user1Url\"),",
+                      "    header: {",
+                      "        Authorization: pm.variables.replaceIn(\"Bearer {{user1AccessToken}}\"),",
+                      "    },",
+                      "};",
+                      "",
+                      "pm.sendRequest(request1, (error, response) => {",
+                      "  if (error) {",
+                      "    console.error(error);",
+                      "  }",
+                      "  pm.test('Can make request to URL provided in Location header', () => {",
+                      "    pm.expect(error).to.equal(null);",
+                      "    pm.expect(response).to.have.property('code', 200);",
+                      "    pm.expect(response).to.have.property('status', 'OK');",
+                      "  });",
+                      "});",
+                      "",
+                      "const request2 = {",
+                      "    url: pm.variables.replaceIn(\"{{baseUrl}}/user/token\"),",
+                      "    method: \"POST\",",
+                      "    header: {",
+                      "        \"Content-Type\": \"application/json\",",
+                      "    },",
+                      "    body: {",
+                      "        mode: \"raw\",",
+                      "        raw: JSON.stringify({",
+                      "            refreshToken: pm.variables.replaceIn(\"{{user1RefreshToken}}\"),",
+                      "        }),",
+                      "    },",
+                      "};",
+                      "",
+                      "pm.sendRequest(request2, (error, response) => {",
+                      "  if (error) {",
+                      "    console.error(error);",
+                      "  }",
+                      "  pm.test('Can use refresh token provided in response body', () => {",
+                      "    pm.expect(error).to.equal(null);",
+                      "    pm.expect(response).to.have.property('code', 200);",
+                      "    pm.expect(response).to.have.property('status', 'OK');",
+                      "  });",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"{{user1Email}}\",\n    \"firstName\": \"{{user1FirstName}}\",\n    \"lastName\": \"{{user1LastName}}\",\n    \"password\": \"{{user1Password}}\"\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/signup",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "signup"]
+                },
+                "description": "Create a user."
+              },
+              "response": [
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/user/signup",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["user", "signup"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                },
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/user/signup",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["user", "signup"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\",\n \"accessToken\": \"<string>\",\n \"refreshToken\": \"<string>\"\n}"
+                },
+                {
+                  "name": "Conflict - A user has already been registered with this email.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/user/signup",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["user", "signup"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                }
+              ]
+            }
+          ],
+          "protocolProfileBehavior": {},
+          "_postman_isSubFolder": true
+        },
+        {
+          "name": "Cabin 1",
+          "item": [
+            {
+              "name": "Cabin 1",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "c899ca92-18a9-47b2-9c78-494a0317de7d",
+                    "exec": [
+                      "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"",
+                      "",
+                      "pm.variables.set(\"randomSecondaryAddress\", `${letters[Math.round(Math.random() * (letters.length - 1))]} ${Math.round(Math.random() * 100)}`)",
+                      "pm.variables.set(\"randomZipCode\", `0${Math.round(Math.random() * 999 + 1000)}`)",
+                      "pm.variables.set(\"randomSize\", `${Math.round(Math.random() * 500)}`)",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "33834ab2-cc27-4219-a0fb-7ba191fb097e",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user1Cabin1Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user1AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"address\": {\n        \"line1\": \"{{$randomStreetAddress}}\",\n        \"line2\": \"{{randomSecondaryAddress}}\",\n        \"zipCode\": \"{{randomZipCode}}\",\n        \"city\": \"{{$randomCity}}\"\n    },\n    \"size\": {{randomSize}},\n    \"beach\": {{$randomBoolean}},\n    \"sauna\": {{$randomBoolean}}\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/cabin",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["cabin"]
+                },
+                "description": "Create a cabin entry."
+              },
+              "response": [
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                },
+                {
+                  "name": "Conflict – There is already an entry for a cabin with that address.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                }
+              ]
+            },
+            {
+              "name": "Advert 1",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "d5625fae-7ab6-4484-975c-e68715afee4a",
+                    "exec": [
+                      "const moment = require(\"moment\")",
+                      "",
+                      "const randomDate1 = moment()",
+                      "",
+                      "pm.variables.set(\"randomDate1\", randomDate1.format(\"YYYY-MM-DD\"))",
+                      "pm.variables.set(\"randomDate2\", randomDate1.add(14, \"days\").format(\"YYYY-MM-DD\"))",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "3e67d19b-71bc-46fd-ae74-20caa4da4f9e",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user1Cabin1Advert1Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user1AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"availableFrom\": \"{{randomDate1}}\",\n    \"availableTo\": \"{{randomDate2}}\"\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{user1Cabin1Url}}/advert",
+                  "host": ["{{user1Cabin1Url}}"],
+                  "path": ["advert"]
+                },
+                "description": "Create an advert."
+              },
+              "response": [
+                {
+                  "name": "Conflict – Cabin is already being advertised at given time span.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                }
+              ]
+            }
+          ],
+          "protocolProfileBehavior": {},
+          "_postman_isSubFolder": true
+        },
+        {
+          "name": "Cabin 2",
+          "item": [
+            {
+              "name": "Cabin 2",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "b85b16f0-5a17-41a1-9636-f013026852ea",
+                    "exec": [
+                      "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"",
+                      "",
+                      "pm.variables.set(\"randomSecondaryAddress\", `${letters[Math.round(Math.random() * (letters.length - 1))]} ${Math.round(Math.random() * 100)}`)",
+                      "pm.variables.set(\"randomZipCode\", `0${Math.round(Math.random() * 999 + 1000)}`)",
+                      "pm.variables.set(\"randomSize\", `${Math.round(Math.random() * 500)}`)",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "e3da12ab-af9b-4f2a-93d0-e969b11e3dfb",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user1Cabin2Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user1AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"address\": {\n        \"line1\": \"{{$randomStreetAddress}}\",\n        \"line2\": \"{{randomSecondaryAddress}}\",\n        \"zipCode\": \"{{randomZipCode}}\",\n        \"city\": \"{{$randomCity}}\"\n    },\n    \"size\": {{randomSize}},\n    \"beach\": {{$randomBoolean}},\n    \"sauna\": {{$randomBoolean}}\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{user1Url}}/cabin",
+                  "host": ["{{user1Url}}"],
+                  "path": ["cabin"]
+                },
+                "description": "Create a cabin entry."
+              },
+              "response": [
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Conflict – There is already an entry for a cabin with that address.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Cabin 2",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "acbb8014-b72f-42a3-a40d-a860bc198b89",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.be.ok;",
+                      "});",
+                      "pm.test('Response has Content-Type set to application/json', function () {",
+                      "    pm.response.to.have.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+                      "    pm.collectionVariables.set(\"user1Cabin2Id\", pm.response.json().cabin._id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user1AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{user1Cabin2Url}}",
+                  "host": ["{{user1Cabin2Url}}"]
+                },
+                "description": "Get a specific cabin entry."
+              },
+              "response": [
+                {
+                  "name": "OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin/:cabinId",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin", ":cabinId"],
+                      "variable": [
+                        {
+                          "key": "cabinId"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\",\n \"cabin\": \"<object>\"\n}"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin/:cabinId",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin", ":cabinId"],
+                      "variable": [
+                        {
+                          "key": "cabinId"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Not Found",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin/:cabinId",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin", ":cabinId"],
+                      "variable": [
+                        {
+                          "key": "cabinId"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "Not Found",
+                  "code": 404,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                }
+              ]
+            },
+            {
+              "name": "Advert 1",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "5a918788-d6f4-4991-addf-5c9711a3db65",
+                    "exec": [
+                      "const moment = require(\"moment\")",
+                      "",
+                      "const randomDate1 = moment()",
+                      "",
+                      "pm.variables.set(\"randomDate1\", randomDate1.format(\"YYYY-MM-DD\"))",
+                      "pm.variables.set(\"randomDate2\", randomDate1.add(14, \"days\").format(\"YYYY-MM-DD\"))"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "07249072-88fd-4ae7-bed3-3310ae39e1bc",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user1Cabin2Advert1Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user1AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"cabin\": \"{{user1Cabin2Id}}\",\n    \"availableFrom\": \"{{randomDate1}}\",\n    \"availableTo\": \"{{randomDate2}}\"\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{user1Url}}/advert",
+                  "host": ["{{user1Url}}"],
+                  "path": ["advert"]
+                },
+                "description": "Create an advert."
+              },
+              "response": [
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Conflict – Cabin is already being advertised at given time span.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                }
+              ]
+            },
+            {
+              "name": "Advert 2",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "145cb636-b399-4d87-9e91-a653ce3fa0d5",
+                    "exec": [
+                      "const moment = require(\"moment\")",
+                      "",
+                      "const randomDate1 = moment().add(1, \"month\")",
+                      "",
+                      "pm.variables.set(\"randomDate1\", randomDate1.format(\"YYYY-MM-DD\"))",
+                      "pm.variables.set(\"randomDate2\", randomDate1.add(7, \"days\").format(\"YYYY-MM-DD\"))"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "8665ff09-91b9-4c05-8b8d-ac5477e67552",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user1Cabin2Advert1Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user1AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"availableFrom\": \"{{randomDate1}}\",\n    \"availableTo\": \"{{randomDate2}}\"\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{user1Url}}/cabin/{{user1Cabin2Id}}/advert",
+                  "host": ["{{user1Url}}"],
+                  "path": ["cabin", "{{user1Cabin2Id}}", "advert"]
+                },
+                "description": "Create an advert."
+              },
+              "response": [
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Conflict – Cabin is already being advertised at given time span.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                }
+              ]
+            }
+          ],
+          "protocolProfileBehavior": {},
+          "_postman_isSubFolder": true
+        }
+      ],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "id": "c4bffc24-80bf-4d41-8590-fd0e49532765",
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "id": "6b717e15-1a64-46ec-a2eb-70afcc70426b",
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {}
+    },
+    {
+      "name": "User 2",
+      "item": [
+        {
+          "name": "Signup",
+          "item": [
+            {
+              "name": "Signup",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "9743640f-4e70-454f-a179-82963224e317",
+                    "exec": [
+                      "pm.collectionVariables.set(\"user2Email\", pm.variables.replaceIn(\"{{$randomEmail}}\"))",
+                      "pm.collectionVariables.set(\"user2FirstName\", pm.variables.replaceIn(\"{{$randomFirstName}}\"))",
+                      "pm.collectionVariables.set(\"user2LastName\", pm.variables.replaceIn(\"{{$randomLastName}}\"))",
+                      "pm.collectionVariables.set(\"user2Password\", pm.variables.replaceIn(\"{{$randomPassword}}\"))"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "8173068b-e285-4217-8289-6c8f3cfb0d0c",
+                    "exec": [
+                      "const schema = {",
+                      "    type: \"object\",",
+                      "    properties: {",
+                      "        status: {type: \"string\"},",
+                      "        accessToken: {type: \"string\"},",
+                      "        refreshToken: {type: \"string\"},",
+                      "    },",
+                      "    required: [\"status\", \"accessToken\", \"refreshToken\"],",
+                      "    additionalProperties: false,",
+                      "};",
+                      "",
+                      "",
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user2Url\", pm.response.headers.get(\"Location\"));",
+                      "});",
+                      "pm.test('Response has Content-Type set to application/json', function () {",
+                      "    pm.response.to.have.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+                      "});",
+                      "pm.test('Response body adheres to schema', function () {",
+                      "    pm.response.to.have.jsonSchema(schema);",
+                      "    pm.collectionVariables.set(\"user2AccessToken\", pm.response.json().accessToken);",
+                      "    pm.collectionVariables.set(\"user2RefreshToken\", pm.response.json().refreshToken);",
+                      "});",
+                      "",
+                      "const request1 = {",
+                      "    url: pm.collectionVariables.get(\"user2Url\"),",
+                      "    header: {",
+                      "        Authorization: pm.variables.replaceIn(\"Bearer {{user2AccessToken}}\"),",
+                      "    },",
+                      "};",
+                      "",
+                      "pm.sendRequest(request1, (error, response) => {",
+                      "  if (error) {",
+                      "    console.error(error);",
+                      "  }",
+                      "  pm.test('Can make request to URL provided in Location header', () => {",
+                      "    pm.expect(error).to.equal(null);",
+                      "    pm.expect(response).to.have.property('code', 200);",
+                      "    pm.expect(response).to.have.property('status', 'OK');",
+                      "  });",
+                      "});",
+                      "",
+                      "const request2 = {",
+                      "    url: pm.variables.replaceIn(\"{{baseUrl}}/user/token\"),",
+                      "    method: \"POST\",",
+                      "    header: {",
+                      "        \"Content-Type\": \"application/json\",",
+                      "    },",
+                      "    body: {",
+                      "        mode: \"raw\",",
+                      "        raw: JSON.stringify({",
+                      "            refreshToken: pm.variables.replaceIn(\"{{user2RefreshToken}}\"),",
+                      "        }),",
+                      "    },",
+                      "};",
+                      "",
+                      "pm.sendRequest(request2, (error, response) => {",
+                      "  if (error) {",
+                      "    console.error(error);",
+                      "  }",
+                      "  pm.test('Can use refresh token provided in response body', () => {",
+                      "    pm.expect(error).to.equal(null);",
+                      "    pm.expect(response).to.have.property('code', 200);",
+                      "    pm.expect(response).to.have.property('status', 'OK');",
+                      "  });",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"{{user2Email}}\",\n    \"firstName\": \"{{user2FirstName}}\",\n    \"lastName\": \"{{user2LastName}}\",\n    \"password\": \"{{user2Password}}\"\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/signup",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["user", "signup"]
+                },
+                "description": "Create a user."
+              },
+              "response": [
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/user/signup",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["user", "signup"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\",\n \"accessToken\": \"<string>\",\n \"refreshToken\": \"<string>\"\n}"
+                },
+                {
+                  "name": "Conflict - A user has already been registered with this email.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/user/signup",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["user", "signup"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"email\": \"<email>\",\n    \"firstName\": \"<string>\",\n    \"lastName\": \"<string>\",\n    \"password\": \"<string>\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/user/signup",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["user", "signup"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                }
+              ]
+            }
+          ],
+          "protocolProfileBehavior": {},
+          "_postman_isSubFolder": true
+        },
+        {
+          "name": "Cabin 1",
+          "item": [
+            {
+              "name": "Cabin 1",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "1c7c0dae-d027-4595-91b2-945d507782dc",
+                    "exec": [
+                      "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"",
+                      "",
+                      "pm.variables.set(\"randomSecondaryAddress\", `${letters[Math.round(Math.random() * (letters.length - 1))]} ${Math.round(Math.random() * 100)}`)",
+                      "pm.variables.set(\"randomZipCode\", `0${Math.round(Math.random() * 999 + 1000)}`)",
+                      "pm.variables.set(\"randomSize\", `${Math.round(Math.random() * 500)}`)",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "781abb12-a144-4716-8f65-4af66fe809da",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user2Cabin1Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user2AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"address\": {\n        \"line1\": \"{{$randomStreetAddress}}\",\n        \"line2\": \"{{randomSecondaryAddress}}\",\n        \"zipCode\": \"{{randomZipCode}}\",\n        \"city\": \"{{$randomCity}}\"\n    },\n    \"size\": {{randomSize}},\n    \"beach\": {{$randomBoolean}},\n    \"sauna\": {{$randomBoolean}}\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/cabin",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["cabin"]
+                },
+                "description": "Create a cabin entry."
+              },
+              "response": [
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Conflict – There is already an entry for a cabin with that address.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                }
+              ]
+            },
+            {
+              "name": "Advert 1",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "e5ed6190-b176-49d6-87ac-501229964dad",
+                    "exec": [
+                      "const moment = require(\"moment\")",
+                      "",
+                      "const randomDate1 = moment().add(2, \"days\")",
+                      "",
+                      "pm.variables.set(\"randomDate1\", randomDate1.format(\"YYYY-MM-DD\"))",
+                      "pm.variables.set(\"randomDate2\", randomDate1.add(10, \"days\").format(\"YYYY-MM-DD\"))"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "50401b42-665d-45ff-98bd-65185a5ba1ca",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user2Cabin1Advert1Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user2AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"availableFrom\": \"{{randomDate1}}\",\n    \"availableTo\": \"{{randomDate2}}\"\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{user2Cabin1Url}}/advert",
+                  "host": ["{{user2Cabin1Url}}"],
+                  "path": ["advert"]
+                },
+                "description": "Create an advert."
+              },
+              "response": [
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Conflict – Cabin is already being advertised at given time span.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                }
+              ]
+            }
+          ],
+          "protocolProfileBehavior": {},
+          "_postman_isSubFolder": true
+        },
+        {
+          "name": "Cabin 2",
+          "item": [
+            {
+              "name": "Cabin 2",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "ac58e4cb-fb90-4b3d-a188-5d157f920985",
+                    "exec": [
+                      "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"",
+                      "",
+                      "pm.variables.set(\"randomSecondaryAddress\", `${letters[Math.round(Math.random() * (letters.length - 1))]} ${Math.round(Math.random() * 100)}`)",
+                      "pm.variables.set(\"randomZipCode\", `0${Math.round(Math.random() * 999 + 1000)}`)",
+                      "pm.variables.set(\"randomSize\", `${Math.round(Math.random() * 500)}`)",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "51e90e2a-a41c-44d4-95d2-4764e073edb5",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user2Cabin2Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user2AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"address\": {\n        \"line1\": \"{{$randomStreetAddress}}\",\n        \"line2\": \"{{randomSecondaryAddress}}\",\n        \"zipCode\": \"{{randomZipCode}}\",\n        \"city\": \"{{$randomCity}}\"\n    },\n    \"size\": {{randomSize}},\n    \"beach\": {{$randomBoolean}},\n    \"sauna\": {{$randomBoolean}}\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{user2Url}}/cabin",
+                  "host": ["{{user2Url}}"],
+                  "path": ["cabin"]
+                },
+                "description": "Create a cabin entry."
+              },
+              "response": [
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                },
+                {
+                  "name": "Conflict – There is already an entry for a cabin with that address.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                }
+              ]
+            },
+            {
+              "name": "Cabin 2",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "4e8c0076-8e1b-4005-b79f-e4007bc5a10f",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.be.ok;",
+                      "});",
+                      "pm.test('Response has Content-Type set to application/json', function () {",
+                      "    pm.response.to.have.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+                      "    pm.collectionVariables.set(\"user2Cabin2Id\", pm.response.json().cabin._id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user2AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{user2Cabin2Url}}",
+                  "host": ["{{user2Cabin2Url}}"]
+                },
+                "description": "Get a specific cabin entry."
+              },
+              "response": [
+                {
+                  "name": "Not Found",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin/:cabinId",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin", ":cabinId"],
+                      "variable": [
+                        {
+                          "key": "cabinId"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "Not Found",
+                  "code": 404,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin/:cabinId",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin", ":cabinId"],
+                      "variable": [
+                        {
+                          "key": "cabinId"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\",\n \"cabin\": \"<object>\"\n}"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/cabin/:cabinId",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["cabin", ":cabinId"],
+                      "variable": [
+                        {
+                          "key": "cabinId"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                }
+              ]
+            },
+            {
+              "name": "Advert 1",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "fb7b7be6-e8eb-46a1-954c-aac5fd59968a",
+                    "exec": [
+                      "const moment = require(\"moment\")",
+                      "",
+                      "const randomDate1 = moment()",
+                      "",
+                      "pm.variables.set(\"randomDate1\", randomDate1.format(\"YYYY-MM-DD\"))",
+                      "pm.variables.set(\"randomDate2\", randomDate1.add(1, \"month\").format(\"YYYY-MM-DD\"))"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "8035fc78-578b-4133-9af8-3e7411193e8f",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user2Cabin2Advert1Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user2AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"cabin\": \"{{user2Cabin2Id}}\",\n    \"availableFrom\": \"{{randomDate1}}\",\n    \"availableTo\": \"{{randomDate2}}\"\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{user2Url}}/advert",
+                  "host": ["{{user2Url}}"],
+                  "path": ["advert"]
+                },
+                "description": "Create an advert."
+              },
+              "response": [
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Conflict – Cabin is already being advertised at given time span.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                }
+              ]
+            },
+            {
+              "name": "Advert 2",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "af2ab7b6-99ec-4ea1-9961-6d5bb7b81055",
+                    "exec": [
+                      "const moment = require(\"moment\")",
+                      "",
+                      "const randomDate1 = moment().add(1.5, \"months\")",
+                      "",
+                      "pm.variables.set(\"randomDate1\", randomDate1.format(\"YYYY-MM-DD\"))",
+                      "pm.variables.set(\"randomDate2\", randomDate1.add(14, \"days\").format(\"YYYY-MM-DD\"))"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "fb6b55c6-9f1b-437a-a5ab-cf1a141d954e",
+                    "exec": [
+                      "pm.test('Response is ok to process', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "pm.test('Reponse has Location header', function () {",
+                      "    pm.response.to.have.header(\"Location\");",
+                      "    pm.collectionVariables.set(\"user2Cabin2Advert1Url\", pm.response.headers.get(\"Location\"));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user2AccessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"availableFrom\": \"{{randomDate1}}\",\n    \"availableTo\": \"{{randomDate2}}\"\n}",
+                  "options": {
+                    "raw": {}
+                  }
+                },
+                "url": {
+                  "raw": "{{user2Url}}/cabin/{{user2Cabin2Id}}/advert",
+                  "host": ["{{user2Url}}"],
+                  "path": ["cabin", "{{user2Cabin2Id}}", "advert"]
+                },
+                "description": "Create an advert."
+              },
+              "response": [
+                {
+                  "name": "Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Unauthorized",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Conflict – Cabin is already being advertised at given time span.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/plain"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<string>"
+                },
+                {
+                  "name": "Bad Request – Request body is invalid.",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "description": {
+                          "content": "Added as a part of security scheme: bearer",
+                          "type": "text/plain"
+                        },
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "\"<object>\""
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/advert",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["advert"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n \"status\": \"<string>\"\n}"
+                }
+              ]
+            }
+          ],
+          "protocolProfileBehavior": {},
+          "_postman_isSubFolder": true
+        }
+      ],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "id": "9cf9b70e-15f7-446c-8a6c-40b23c5a3097",
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "id": "ca2e8502-3e90-4dde-81d7-995e334c3af3",
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {}
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "602b6980-7306-498d-aa2d-0465b4f7ba52",
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "4cacb6ea-d1e9-4be4-b8db-879abebee98d",
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "id": "26b95928-8ac0-4b2a-b7b6-12d3e1d4f462",
+      "key": "baseUrl",
+      "value": "http://api:3000"
+    },
+    {
+      "id": "b9950533-3dd1-48d6-ba77-f1f2b6fd4a55",
+      "key": "user1Email",
+      "value": ""
+    },
+    {
+      "id": "01c55fe6-4799-4eb8-8004-51ab057d9f99",
+      "key": "user1FirstName",
+      "value": ""
+    },
+    {
+      "id": "4736cb20-6285-44c7-999c-3f7c58108661",
+      "key": "user1LastName",
+      "value": ""
+    },
+    {
+      "id": "6e8db039-a2b5-475a-86fc-8f2e1b45eb01",
+      "key": "user1Password",
+      "value": ""
+    },
+    {
+      "id": "5d7a1320-cfcb-45cb-8f94-9ffc873291c6",
+      "key": "user1AccessToken",
+      "value": ""
+    },
+    {
+      "id": "081426c5-63bf-4fe2-b9c8-3eb19384ae77",
+      "key": "user1AccessToken1",
+      "value": ""
+    },
+    {
+      "id": "e45a7ccd-422e-439b-8b5d-07f731384bf2",
+      "key": "user1RefreshToken1",
+      "value": ""
+    },
+    {
+      "id": "41c12afb-5ec2-422e-b661-60a1efa01c5e",
+      "key": "user1Url",
+      "value": ""
+    },
+    {
+      "id": "141a41a9-1c46-4940-a7e0-c957050152e0",
+      "key": "user1AccessToken2",
+      "value": ""
+    },
+    {
+      "id": "c8265408-d1fa-4e25-9e64-5ef84dc9a3a4",
+      "key": "user1RefreshToken2",
+      "value": ""
+    },
+    {
+      "id": "eec3e64f-49d7-4e30-892e-ab6eba880fde",
+      "key": "user1AccessToken3",
+      "value": ""
+    },
+    {
+      "id": "5367e301-3e46-4caf-a009-a0ed964bd130",
+      "key": "user1RefreshToken",
+      "value": ""
+    },
+    {
+      "id": "c87f9a97-b07b-4e89-9e0c-3877ea865ee7",
+      "key": "user1Cabin1Url",
+      "value": ""
+    },
+    {
+      "id": "1b73a249-8e2c-4c26-8945-ea38cfe75843",
+      "key": "user1Cabin1Advert1Url",
+      "value": ""
+    },
+    {
+      "id": "a53efa0c-a8e7-4bff-9b38-3be2f26c3c8c",
+      "key": "user1Cabin2Url",
+      "value": ""
+    },
+    {
+      "id": "5f7241e7-c26b-4bf4-8577-84c326a51266",
+      "key": "user1Cabin2Id",
+      "value": ""
+    },
+    {
+      "id": "02f270e2-92ee-486d-b357-ccd495cdc0aa",
+      "key": "user1Cabin2Advert1Url",
+      "value": ""
+    },
+    {
+      "id": "15b7a03c-4ab5-4694-9fcb-12c43a209e28",
+      "key": "user2Email",
+      "value": ""
+    },
+    {
+      "id": "1e2c3f61-f872-4f36-82a4-8e016eb69204",
+      "key": "user2FirstName",
+      "value": ""
+    },
+    {
+      "id": "897a9728-54a6-4a7a-b0d5-847bd9e7e5b5",
+      "key": "user2LastName",
+      "value": ""
+    },
+    {
+      "id": "fd0f9e60-2815-4790-9819-5808da34e03c",
+      "key": "user2Password",
+      "value": ""
+    },
+    {
+      "id": "2cb8fe32-e7f9-40a3-a5bd-af6862ac2a19",
+      "key": "user2AccessToken",
+      "value": ""
+    },
+    {
+      "id": "e0af2b79-57ef-4a1d-a4b6-facce48f8925",
+      "key": "user2RefreshToken",
+      "value": ""
+    },
+    {
+      "id": "6e485e6d-065a-428c-b43f-646061e8ef34",
+      "key": "user2Url",
+      "value": ""
+    },
+    {
+      "id": "a13b7e10-9a09-481a-b5fa-5c577ea0ed18",
+      "key": "user2Cabin1Url",
+      "value": ""
+    },
+    {
+      "id": "49c070dd-1916-446c-a4d0-0d10a9b5660d",
+      "key": "user2Cabin2Url",
+      "value": ""
+    },
+    {
+      "id": "c9b02402-ebb5-488d-9e77-b0babc8637f8",
+      "key": "user2Cabin2Id",
+      "value": ""
+    },
+    {
+      "id": "59e3f2f6-b6fd-4660-9c99-a61ad0fe479c",
+      "key": "user2Cabin1Advert1Url",
+      "value": ""
+    },
+    {
+      "id": "2561c4cf-ee47-4672-aa82-6f0519305b63",
+      "key": "user2Cabin2Advert1Url",
+      "value": ""
+    }
+  ],
+  "protocolProfileBehavior": {}
+}

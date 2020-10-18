@@ -12,13 +12,12 @@ services:
     ports:
       - "27017:27017"
 
-  node:
-    container_name: node
+  api:
+    container_name: api
     build: ./
     env_file:
       - ./.env
     volumes:
-      - ./db:/data/db
       - ./src:/srv/ia-2-017-0-lodge-broker/src
     restart: always
     environment:

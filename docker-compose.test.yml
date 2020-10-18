@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  api:
+    env_file:
+      - ./.env
+      - ./.env.test
+
+  test:
+    container_name: test
+    build:
+      context: .
+      target: test
+    volumes:
+      - ./src:/srv/ia-2-017-0-lodge-broker/src
+    environment:
+      WAIT_HOSTS: api:3000

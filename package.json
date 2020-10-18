@@ -16,7 +16,8 @@
     "prettier": "prettier --check .",
     "format": "prettier --write .",
     "tlp": "npm run tsc && npm run lint && npm run prettier",
-    "tff": "npm run tsc && npm run fix && npm run format"
+    "tff": "npm run tsc && npm run fix && npm run format",
+    "newman": "newman run api_test.postman_collection.json --delay-request 500"
   },
   "devDependencies": {
     "@danielgiljam/eslint-config": "^2.0.1",
@@ -49,6 +50,7 @@
     "moment": "^2.29.0",
     "mongoose": "^5.10.5",
     "morgan": "^1.10.0",
+    "newman": "^5.2.0",
     "prettier": "^2.1.1",
     "ts-node-dev": "^1.0.0-pre.62",
     "typescript": "^4.0.2"

@@ -1,5 +1,7 @@
 # IA-2-017 (0) Lodge Broker
 
+![tests](https://github.com/DanielGiljam/ia-2-017-0-lodge-broker/workflows/Tests/badge.svg)
+
 A traditional REST API that basically does what AirBnb does.
 
 Made in the course "Webbtjänster och molnteknologi (2020-21) (IA-2-017 (0))" at [Arcada University of Applied Sciences](https://www.arcada.fi/en).
@@ -32,3 +34,4 @@ docker-compose up
 - [x] `/cabin` and `/cabins`
 - [x] `/advert` and `/adverts`
 - [x] `/booking` and `/bookings`
+- [x] Automated testing (CI)
